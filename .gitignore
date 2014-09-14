@@ -27,3 +27,10 @@
 *.i*86
 *.x86_64
 *.hex
+
+# TI binaries
+*.83z
+*.8xk
+*.8xz
+*.9xz
+*.v2z
