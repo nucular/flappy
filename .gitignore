@@ -34,3 +34,8 @@
 *.8xz
 *.9xz
 *.v2z
+
+# Include extgraph
+!extgraph/extgraph.a
+!extgraph/gray.o
+!extgraph/tilemap.a
