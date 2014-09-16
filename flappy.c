@@ -33,19 +33,19 @@ void drawPipe(unsigned int x, unsigned int openy, unsigned int opensize)
 
 	// outline the pipes with black
 	FastDrawVLine_R(lightplane, down.x0, down.y0, down.y1, A_XOR);
-    FastDrawVLine_R(lightplane, down.x1, down.y0, down.y1, A_XOR);
-    FastDrawVLine_R(lightplane, up.x0, up.y0, up.y1, A_XOR);
-    FastDrawVLine_R(lightplane, up.x1, up.y0, up.y1, A_XOR);
+	FastDrawVLine_R(lightplane, down.x1, down.y0, down.y1, A_XOR);
+	FastDrawVLine_R(lightplane, up.x0, up.y0, up.y1, A_XOR);
+	FastDrawVLine_R(lightplane, up.x1, up.y0, up.y1, A_XOR);
 
-    // draw the 24x12 pipe sprites
+	// draw the 24x12 pipe sprites
 	GraySpriteX8_XOR(
 		x, openy - opensize - 11, 12,
-		(unsigned char*)GRAPHICS_PIPE_DOWN_LIGHT, (unsigned char*)GRAPHICS_PIPE_DOWN_DARK, 3,
+		GRAPHICS_PIPE_DOWN_LIGHT, GRAPHICS_PIPE_DOWN_DARK, 3,
 		lightplane, darkplane
 	);
 	GraySpriteX8_XOR(
 		x, openy + opensize, 12,
-		(unsigned char*)GRAPHICS_PIPE_UP_LIGHT, (unsigned char*)GRAPHICS_PIPE_UP_DARK, 3,
+		GRAPHICS_PIPE_UP_LIGHT, GRAPHICS_PIPE_UP_DARK, 3,
 		lightplane, darkplane
 	);
 }
