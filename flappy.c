@@ -10,15 +10,38 @@
 // pointers to the grayscale planes
 void *lightplane;
 void *darkplane;
+// bird animation frame
+unsigned char birdframe = 0;
 
-void drawBird(unsigned short x, unsigned short y)
+void drawBird(unsigned short x, unsigned short y, unsigned char frame)
 {
-	// draw the 16x11 bird sprite
-	GraySprite16_XOR(
-		x, y, 11,
-		GRAPHICS_BIRD_LIGHT, GRAPHICS_BIRD_DARK,
-		lightplane, darkplane
-	);
+	// ping-pong the three frames
+	frame = abs(((frame + 2) % 4) - 2);
+	// draw the 16x12 bird animation
+	switch (frame)
+	{
+		case 0:
+			GraySprite16_XOR(
+				x, y, 12,
+				GRAPHICS_BIRD0_LIGHT, GRAPHICS_BIRD0_DARK,
+				lightplane, darkplane
+			);
+			break;
+		case 1:
+			GraySprite16_XOR(
+				x, y, 12,
+				GRAPHICS_BIRD1_LIGHT, GRAPHICS_BIRD1_DARK,
+				lightplane, darkplane
+			);
+			break;
+		case 2:
+			GraySprite16_XOR(
+				x, y, 12,
+				GRAPHICS_BIRD2_LIGHT, GRAPHICS_BIRD2_DARK,
+				lightplane, darkplane
+			);
+			break;
+	}
 }
 
 void drawPipe(unsigned int x, unsigned int openy, unsigned int opensize)
@@ -76,7 +99,7 @@ void _main(void)
 	darkplane = GrayGetPlane(DARK_PLANE);
 	
 	// pre-draw so the XOR clearing works
-	drawBird(birdx, 40);
+	drawBird(birdx, 40, birdframe);
 	drawPipe(pipex, 50, 15);
 	
 	// main loop
@@ -93,11 +116,12 @@ void _main(void)
 			}
 			
 			// clear, move and draw using XOR
-			drawBird(birdx, 40);
+			drawBird(birdx, 40, birdframe);
 			drawPipe(pipex, 50, 15);
 			birdx++;
+			birdframe++;
 			pipex--;
-			drawBird(birdx, 40);
+			drawBird(birdx, 40, birdframe);
 			drawPipe(pipex, 50, 15);
 			
 			// stuff isn't clipped to the screen yet
