@@ -85,10 +85,10 @@ void _main(void)
 			// Check for keypresses
 			if (!OSdequeue(&key, keyqueue))
 			{
-				if (key == KEY_ON || key == KEY_QUIT)
-				{
+				if (key == KEY_ON)
 					off();
-				}
+				else if (key == KEY_QUIT)
+					running = FALSE;
 				else
 				{
 					switch (gs)
