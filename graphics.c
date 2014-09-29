@@ -2,7 +2,7 @@
 
 #include "extgraph/extgraph.h"
 
-void drawBird(unsigned short x, unsigned short y, unsigned char frame)
+void graphics_drawbird(unsigned short x, unsigned short y, unsigned char frame)
 {
 	// ping-pong the three frames
 	frame = abs(((frame + 2) % 4) - 2);
@@ -36,7 +36,7 @@ void drawBird(unsigned short x, unsigned short y, unsigned char frame)
 	}
 }
 
-void drawPipe(unsigned int x, unsigned int openy, unsigned int opensize)
+void graphics_drawpipe(unsigned int x, unsigned int openy, unsigned int opensize)
 {
 	// get the rect positions
 	WIN_RECT down = {x + 1, 0, x + 22, openy - opensize - 12};
@@ -65,7 +65,7 @@ void drawPipe(unsigned int x, unsigned int openy, unsigned int opensize)
 	);
 }
 
-void drawGrass(unsigned char frame)
+void graphics_drawgrass(unsigned char frame)
 {
 	int x = LCD_WIDTH + (8 - abs(frame % 8));
 	while (x > 0)
@@ -79,7 +79,7 @@ void drawGrass(unsigned char frame)
 	}
 }
 
-void drawLogo(unsigned int x, unsigned int y)
+void graphics_drawlogo(unsigned int x, unsigned int y)
 {
 	GraySpriteX8_MASK(
 		x, y, 24,

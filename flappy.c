@@ -1,137 +1,173 @@
 // 2014 by nucular, MIT license
-// tigcc -O2 -Wall flappy.c extgraph/extgraph.a
+// tigcc -O2 -Wall flappy.c extgraph/extgraph.a -DLC_LANG=LC_ENGLISH
 
 #include "flappy.h"
-#include "graphics.h"
+
+// configuration headers
+#include "locale.h"
+#include "config.h"
 
 #include <tigcclib.h>
-#include "extgraph/extgraph.h"
 
-// pointers to the grayscale planes
-void *lightplane;
-void *darkplane;
-// bird animation frame
-unsigned char birdframe = 0;
+#include "graphics.c"
+#include "menu.c"
+#include "game.c"
+#include "gameover.c"
 
-void drawBird(unsigned short x, unsigned short y, unsigned char frame)
+// allocate and set up stuff
+BOOL init()
 {
-	// ping-pong the three frames
-	frame = abs(((frame + 2) % 4) - 2);
-	// draw the 16x12 bird animation
-	switch (frame)
+	// start the random number generator
+	randomize();
+
+	// allocate our graphic buffers
+	buffermem = malloc(LCD_WIDTH * LCD_HEIGHT * 2);
+	if (!buffermem)
 	{
-		case 0:
-			GraySprite16_XOR(
-				x, y, 12,
-				GRAPHICS_BIRD0_LIGHT, GRAPHICS_BIRD0_DARK,
-				lightplane, darkplane
-			);
-			break;
-		case 1:
-			GraySprite16_XOR(
-				x, y, 12,
-				GRAPHICS_BIRD1_LIGHT, GRAPHICS_BIRD1_DARK,
-				lightplane, darkplane
-			);
-			break;
-		case 2:
-			GraySprite16_XOR(
-				x, y, 12,
-				GRAPHICS_BIRD2_LIGHT, GRAPHICS_BIRD2_DARK,
-				lightplane, darkplane
-			);
-			break;
+		// not enough RAM
+		DlgMessage(LC_ERROR, LC_MEMORY_ERROR_TEXT, BT_OK, BT_NONE);
+		return FALSE;
 	}
+	lightbuffer = buffermem;
+	darkbuffer = buffermem + LCD_WIDTH * LCD_HEIGHT;
+
+	// quit if we can't switch to grayscale
+	if (!GrayOn())
+	{
+		DlgMessage(LC_ERROR, LC_GRAYSCALE_ERROR_TEXT, BT_OK, BT_NONE);
+		return FALSE;
+	}
+
+	// clear the screen
+	ClrScr();
+
+	// get the grayscale plane pointers
+	lightplane = GrayGetPlane(LIGHT_PLANE);
+	darkplane = GrayGetPlane(DARK_PLANE);
+
+	return TRUE;
 }
 
-void drawPipe(unsigned int x, unsigned int openy, unsigned int opensize)
+// clean up and exit gracefully
+void deinit()
 {
-	// get the rect positions
-	WIN_RECT down = {x + 1, 0, x + 22, openy - opensize - 12};
-	WIN_RECT up = {x + 1, openy + opensize + 12, x + 22, LCD_HEIGHT - 1};
-
-	// fill the pipes with dark gray
-	FastFillRect(darkplane, down.x0, down.y0, down.x1, down.y1, A_XOR);
-	FastFillRect(darkplane, up.x0, up.y0, up.x1, up.y1, A_XOR);
-
-	// outline the pipes with black
-	FastDrawVLine_R(lightplane, down.x0, down.y0, down.y1, A_XOR);
-	FastDrawVLine_R(lightplane, down.x1, down.y0, down.y1, A_XOR);
-	FastDrawVLine_R(lightplane, up.x0, up.y0, up.y1, A_XOR);
-	FastDrawVLine_R(lightplane, up.x1, up.y0, up.y1, A_XOR);
-
-	// draw the 24x12 pipe sprites
-	GraySpriteX8_XOR(
-		x, openy - opensize - 11, 12,
-		GRAPHICS_PIPE_DOWN_LIGHT, GRAPHICS_PIPE_DOWN_DARK, 3,
-		lightplane, darkplane
-	);
-	GraySpriteX8_XOR(
-		x, openy + opensize, 12,
-		GRAPHICS_PIPE_UP_LIGHT, GRAPHICS_PIPE_UP_DARK, 3,
-		lightplane, darkplane
-	);
+	if (buffermem)
+		free(buffermem);
+	// turn off or we'd crash the calc
+	GrayOff();
 }
 
 // entry point
 void _main(void)
 {
+	// some variables for the main loop
 	unsigned int lasttick = 0;
 	void *keyqueue = kbd_queue();
 	unsigned short key;
 
-	short birdx = 0;
-	short pipex = LCD_WIDTH - 24;
-
-	// quit if we can't switch to grayscale
-	if (!GrayOn())
+	if (!init())
+	{
+		// something went horribly wrong
+		deinit();
 		return;
+	}
 
-	// clear the screen
-	ClrScr();
-
-	// set the clipping area to the full screen
-	SetCurAttr(A_XOR);
-	SetCurClip(ScrRect);
-
-	// get the grayscale plane pointers
-	lightplane = GrayGetPlane(LIGHT_PLANE);
-	darkplane = GrayGetPlane(DARK_PLANE);
-	
-	// pre-draw so the XOR clearing works
-	drawBird(birdx, 40, birdframe);
-	drawPipe(pipex, 50, 15);
+	// start at the menu
+	gs = GS_MENU;
 	
 	// main loop
-	while (TRUE)
+	running = TRUE;
+	while (running)
 	{
 		// run at 20 fps
 		if (FiftyMsecTick != lasttick)
 		{
 			// Check for keypresses
-			if (OSdequeue(&key, keyqueue))
+			if (!OSdequeue(&key, keyqueue))
 			{
-				if (key == KEY_ESC)
+				if (key == KEY_ON || key == KEY_QUIT)
+				{
+					off();
+				}
+				else
+				{
+					switch (gs)
+					{
+						case GS_MENU:
+							if (key == KEY_ENTER)
+								switchgs(GS_GAME);
+							else if (key == KEY_ESC)
+								running = FALSE;
+
+						case GS_GAME:
+							if (key == KEY_ENTER)
+								game_flap();
+							else if (key == KEY_ESC)
+								switchgs(GS_MENU);
+
+						case GS_GAMEOVER:
+							if (key == KEY_ENTER)
+								switchgs(GS_GAME);
+							else if (key == KEY_ESC)
+								switchgs(GS_MENU);
+							break;
+					}
+				}
+			}
+
+			// draw to the buffers
+			GrayClearScreen2B(lightbuffer, darkbuffer);
+			switch (gs)
+			{
+				case GS_MENU:
+					menu_update();
+					menu_draw();
+					break;
+				case GS_GAME:
+					game_update();
+					game_draw();
+					break;
+				case GS_GAMEOVER:
+					gameover_update();
+					game_draw();
+					gameover_draw();
 					break;
 			}
-			
-			// clear, move and draw using XOR
-			drawBird(birdx, 40, birdframe);
-			drawPipe(pipex, 50, 15);
-			birdx++;
-			birdframe++;
-			pipex--;
-			drawBird(birdx, 40, birdframe);
-			drawPipe(pipex, 50, 15);
-			
-			// stuff isn't clipped to the screen yet
-			if (birdx >= LCD_WIDTH - 16 || pipex <= 0)
-				break;
-			
+
+			// flip the buffers
+			FastCopyScreen(darkbuffer, darkplane);
+			FastCopyScreen(lightbuffer, lightplane);
+
 			lasttick = FiftyMsecTick;
+			framecounter++;
 		}
 	}
 	
-	// this is important!
-	GrayOff();
+	// important!
+	deinit();
+}
+
+// switch between gamestates
+void switchgs(enum GameState newgs)
+{
+	FastClearScreen_R(lightbuffer);
+	FastClearScreen_R(darkbuffer);
+
+	birdframe = 0;
+	// deinitialize
+	switch (gs)
+	{
+		case GS_MENU:
+			FadeOutToBlack_RL_R(lightplane, darkplane, LCD_HEIGHT, LCD_WIDTH / 8, 20);
+			break;
+		default:
+			break;
+	}
+	// initialize
+	switch (newgs)
+	{
+		default:
+			break;
+	}
+	gs = newgs;
 }
