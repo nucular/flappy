@@ -1,5 +1,13 @@
 #include "menu.h"
 
+void menu_init(enum GameState oldgs)
+{
+}
+
+void menu_deinit(enum GameState newgs)
+{
+}
+
 void menu_draw()
 {
 	graphics_drawbird((int)(LCD_WIDTH / 2) - 8, 45 + menu_birdy, menu_birdframe);

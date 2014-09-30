@@ -142,7 +142,7 @@ void _main(void)
 			framecounter++;
 		}
 	}
-	
+
 	// important!
 	deinit();
 }
@@ -158,7 +158,13 @@ void switchgs(enum GameState newgs)
 	switch (gs)
 	{
 		case GS_MENU:
-			FadeOutToBlack_RL_R(lightplane, darkplane, LCD_HEIGHT, LCD_WIDTH / 8, 20);
+			menu_deinit(newgs);
+			break;
+		case GS_GAME:
+			game_deinit(newgs);
+			break;
+		case GS_GAMEOVER:
+			gameover_deinit(newgs);
 			break;
 		default:
 			break;
@@ -166,6 +172,15 @@ void switchgs(enum GameState newgs)
 	// initialize
 	switch (newgs)
 	{
+		case GS_MENU:
+			menu_init(gs);
+			break;
+		case GS_GAME:
+			game_init(gs);
+			break;
+		case GS_GAMEOVER:
+			gameover_init(gs);
+			break;
 		default:
 			break;
 	}
