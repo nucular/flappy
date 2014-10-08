@@ -1,5 +1,5 @@
-flappy()
-========
+![flappy()](logo.png)
+=====================
 
 This C project aims to recreate the "Flappy Bird" mobile game by Dong Nguyen
 on TI calculators, using the TIGCC compiler and the extgraph library for fast
