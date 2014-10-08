@@ -3,10 +3,15 @@
 void game_init(enum GameState oldgs)
 {
 	game_birdx = LCD_WIDTH / 5;
+	game_birdy = (LCD_HEIGHT / 2) - 12;
+	game_birdvy = 0;
+	game_pipes = malloc(sizeof(Pipe) * GAME_MAXPIPES);
 }
 
 void game_deinit(enum GameState newgs)
 {
+	if (game_pipes)
+		free(game_pipes);
 }
 
 void game_update()

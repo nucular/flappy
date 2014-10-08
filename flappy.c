@@ -15,28 +15,22 @@
 #include "gameover.c"
 
 // allocate and set up stuff
-BOOL init()
+void init()
 {
 	// start the random number generator
 	randomize();
 
 	// allocate our graphic buffers
 	buffermem = malloc(LCD_WIDTH * LCD_HEIGHT * 2);
+	// not enough RAM
 	if (!buffermem)
-	{
-		// not enough RAM
-		DlgMessage(LC_ERROR, LC_MEMORY_ERROR_TEXT, BT_OK, BT_NONE);
-		return FALSE;
-	}
+		error(LC_MEMORY_ERROR_TEXT);
 	lightbuffer = buffermem;
 	darkbuffer = buffermem + LCD_WIDTH * LCD_HEIGHT;
 
 	// quit if we can't switch to grayscale
 	if (!GrayOn())
-	{
-		DlgMessage(LC_ERROR, LC_GRAYSCALE_ERROR_TEXT, BT_OK, BT_NONE);
-		return FALSE;
-	}
+		error(LC_GRAYSCALE_ERROR_TEXT);
 
 	// clear the screen
 	ClrScr();
@@ -44,8 +38,6 @@ BOOL init()
 	// get the grayscale plane pointers
 	lightplane = GrayGetPlane(LIGHT_PLANE);
 	darkplane = GrayGetPlane(DARK_PLANE);
-
-	return TRUE;
 }
 
 // clean up and exit gracefully
@@ -53,8 +45,19 @@ void deinit()
 {
 	if (buffermem)
 		free(buffermem);
-	// turn off or we'd crash the calc
+	// turn this off or we'd crash the calc
 	GrayOff();
+	// for good measure
+	ClrScr();
+}
+
+// generic error handler
+void error(char* text)
+{
+	switchgs(GS_NONE);
+	deinit();
+	DlgMessage(LC_ERROR, text, BT_OK, BT_NONE);
+	exit(1);
 }
 
 // entry point
@@ -65,19 +68,14 @@ void _main(void)
 	void *keyqueue = kbd_queue();
 	unsigned short key;
 
-	if (!init())
-	{
-		// something went horribly wrong
-		deinit();
-		return;
-	}
+	// initiate all the stuff
+	init();
 
 	// start at the menu
-	gs = GS_MENU;
+	switchgs(GS_MENU);
 	
 	// main loop
-	running = TRUE;
-	while (running)
+	while (gs != GS_NONE)
 	{
 		// run at 20 fps
 		if (FiftyMsecTick != lasttick)
@@ -88,7 +86,7 @@ void _main(void)
 				if (key == KEY_ON)
 					off();
 				else if (key == KEY_QUIT)
-					running = FALSE;
+					switchgs(GS_NONE);
 				else
 				{
 					switch (gs)
@@ -97,19 +95,21 @@ void _main(void)
 							if (key == KEY_ENTER)
 								switchgs(GS_GAME);
 							else if (key == KEY_ESC)
-								running = FALSE;
-
+								switchgs(GS_NONE);
+							break;
 						case GS_GAME:
 							if (key == KEY_ENTER)
 								game_flap();
 							else if (key == KEY_ESC)
 								switchgs(GS_MENU);
-
+							break;
 						case GS_GAMEOVER:
 							if (key == KEY_ENTER)
 								switchgs(GS_GAME);
 							else if (key == KEY_ESC)
 								switchgs(GS_MENU);
+							break;
+						default:
 							break;
 					}
 				}
@@ -131,6 +131,8 @@ void _main(void)
 					gameover_update();
 					game_draw();
 					gameover_draw();
+					break;
+				default:
 					break;
 			}
 
